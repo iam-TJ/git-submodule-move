@@ -47,6 +47,11 @@ else
  DEST_PATH_CANONICAL="$(readlink -m $PWD/$DEST_PATH)"
 fi
 
+# if destination is the same as current working directory use an empty string not relative navigation
+if [ "$DEST_PATH_CANONICAL" = "$PWD" ]; then
+ DEST_PATH=""
+fi
+ 
 # ensure destination isn't outside the working directory
 if ! echo "$DEST_PATH_CANONICAL" | grep -q "^$PWD"; then
  echo "Fatal: destination path is outside the working directory (canonical path: $DEST_PATH_CANONICAL)" >&2
@@ -94,18 +99,24 @@ while [ -n "$P" -a "$P" != "." ]; do
  REL_PATH_QTY=$((1+REL_PATH_QTY))
 done
 
+# when destination path is not empty postfix a path separator. This avoids an empty
+# relative destination creating an absolute path in sed and git operations later
+if [ ! -z "$DEST_PATH" ]; then
+ DEST_PATH="$DEST_PATH/"
+fi
+
 # when the repository isn't in the usual place (./.git/) use absolute paths
 if [ "$GIT_DIR_ABSOLUTE" -eq "1" ]; then
- GIT_MODULE_WORKTREE="$PWD/$DEST_PATH/$GIT_PROJECT"
- GIT_SUBMODULE_GITDIR="$GIT_DIR/modules/$DEST_PATH/$GIT_PROJECT"
+ GIT_MODULE_WORKTREE="$PWD/$DEST_PATH$GIT_PROJECT"
+ GIT_SUBMODULE_GITDIR="$GIT_DIR/modules/$DEST_PATH$GIT_PROJECT"
 else
- GIT_MODULE_WORKTREE="../../../${REL_PATH}$DEST_PATH/$GIT_PROJECT"
- GIT_SUBMODULE_GITDIR="../${REL_PATH}.git/modules/$DEST_PATH/$GIT_PROJECT"
+ GIT_MODULE_WORKTREE="../../../${REL_PATH}$DEST_PATH$GIT_PROJECT"
+ GIT_SUBMODULE_GITDIR="../${REL_PATH}.git/modules/$DEST_PATH$GIT_PROJECT"
 fi
 
 # if the submodule has a non-file URL its repository will be in GIT_DIR/modules/
 # if it has a file (path) URL its repository will be inside the submodule
-SUB=$(grep -A2 'submodule \"'$GIT_PROJECT $GIT_MODULES)
+SUB=$(grep -A2 'submodule \".*'$GIT_PROJECT $GIT_MODULES)
 echo $SUB | grep -v -q 'url = \./'
 GIT_MODULES_URL_FILE=$?
 
@@ -128,18 +139,18 @@ fi
 
 # step 1a - update super-repository's submodule name (in ./.gitmodules)
 $VERBOSE && echo " updating super-repository's submodule name"
-CMD="sed -i s%^\(.submodule.\).*$SRC_PATH.*%\\1\"$DEST_PATH/$GIT_PROJECT\"]% $GIT_MODULES"
+CMD="sed -i s%^\(.submodule.\).*$SRC_PATH.*%\\1\"$DEST_PATH$GIT_PROJECT\"]% $GIT_MODULES"
 $DEBUG $CMD
 
 # step 1b - update super-repository's submodule "path" (in ./.gitmodules)
 $VERBOSE && echo " updating super-repository's submodule path"
-CMD="sed -i s%\(.*path.=.\)\($SRC_PATH\)%\1$DEST_PATH/$GIT_PROJECT% $GIT_MODULES"
+CMD="sed -i s%\(.*path.=.\)\($SRC_PATH\)%\1$DEST_PATH$GIT_PROJECT% $GIT_MODULES"
 $DEBUG $CMD
 
 if [ $GIT_MODULES_URL_FILE -eq 1 ]; then
  # step 1c - update super-repository's submodule file:// "url" (in ./.gitmodules)
  $VERBOSE && echo " updating super-repository's submodule url"
- CMD="sed -i -e s%\(.*url.=.\)\(\.$SRC_PATH\)%\1\./$DEST_PATH/$GIT_PROJECT% $GIT_MODULES"
+ CMD="sed -i -e s%\(.*url.=.\)\(\./$SRC_PATH\)%\1\./$DEST_PATH$GIT_PROJECT% $GIT_MODULES"
  $DEBUG $CMD
 fi
 
@@ -162,7 +173,7 @@ if [ $GIT_MODULES_URL_FILE -eq 0 ]; then
  $VERBOSE && echo " moving super-repository's submodule repository"
  CMD="mkdir -p $GIT_DIR/modules/$DEST_PATH"
  $DEBUG $CMD
- CMD="mv $GIT_DIR/modules/$SRC_PATH $GIT_DIR/modules/$DEST_PATH/$GIT_PROJECT"
+ CMD="mv $GIT_DIR/modules/$SRC_PATH $GIT_DIR/modules/$DEST_PATH$GIT_PROJECT"
  $DEBUG $CMD
 fi
 
@@ -170,14 +181,14 @@ fi
 $VERBOSE && echo " moving submodule directory"
 CMD="mkdir -p ./$DEST_PATH"
 $DEBUG $CMD
-CMD="mv ./$SRC_PATH ./$DEST_PATH/$GIT_PROJECT"
+CMD="mv ./$SRC_PATH ./$DEST_PATH$GIT_PROJECT"
 $DEBUG $CMD
 
 # step 6a - remove the old location from the index
 $DEBUG git rm --quiet --cached $SRC_PATH
 
 # step 6b - add the new location to the git index so it is tracked
-$DEBUG git add .gitmodules $DEST_PATH/$GIT_PROJECT
+$DEBUG git add .gitmodules ./$DEST_PATH$GIT_PROJECT
 
 # step 7 - Show git status and suggest a commit is made to fix the move
 CMD="git status"
