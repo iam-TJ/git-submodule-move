@@ -4,7 +4,7 @@ Git helper shell-script to move submodules within the super-repository
 
 Example:
 
-    git-submodule-move path/to/submodule new/path/
+    git-submodule-move --verbose path/to/submodule new/path/
      updating super-repository's submodule name
      updating super-repository's submodule path
      updating super-repository's submodule repository config
