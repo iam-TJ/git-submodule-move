@@ -22,6 +22,7 @@ Example:
 
 
 The directory layout changes thus:
+
     before: ./path/to/submodule
     after:  ./new/path/submodule
 
