@@ -5,9 +5,9 @@
 #
 # Git helper script to move submodules within the super-repository
 #
-# Usage: git-submodule-move source_path destination_path
+# Usage: git-submodule-move [-v|--verbose] path/to/submodule new/path/
 #
-# example: git-submodule-move [-v|==verbose] path/to/submodule new/path/
+# example: git-submodule-move path/to/submodule new/path/
 # 
 # before: ./deps/project
 # after:  ./deps/experimental/project
