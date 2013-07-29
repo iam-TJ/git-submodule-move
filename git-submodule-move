@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # git-submodule-move
 # (c) Copyright 2013 TJ <linux@iam.tj>
 # Licensed on the terms of the GNU GPL version 3
@@ -82,9 +82,9 @@ fi
 
 # resolve destination path to its canonical form
 if [ ! "${DEST_PATH##/*}" = "$DEST_PATH" ]; then
- DEST_PATH_CANONICAL="$(readlink -m $DEST_PATH)"
+ DEST_PATH_CANONICAL="$(cd $DEST_PATH && pwd -P)"
 else
- DEST_PATH_CANONICAL="$(readlink -m $PWD/$DEST_PATH)"
+ DEST_PATH_CANONICAL="$(cd $PWD/$DEST_PATH && pwd -P)"
 fi
 
 # if destination is the same as current working directory use an empty string not relative navigation
@@ -171,9 +171,9 @@ if [ -n "$DEBUG" -o "$VERBOSE" = "true" ]; then
  echo "Debug: REL_PATH_QTY        =$REL_PATH_QTY"
  echo "Debug: REL_PATH            =$REL_PATH"
  echo "Debug: GIT_MODULE_WORKTREE =$GIT_MODULE_WORKTREE"
- echo "Debug:  canonicalised      =$(readlink -m $GIT_DIR/modules/$DEST_PATH/$GIT_PROJECT/$GIT_MODULE_WORKTREE)"
+ echo "Debug:  canonicalised      =$(cd $GIT_DIR/modules/$DEST_PATH/$GIT_PROJECT/$GIT_MODULE_WORKTREE && pwd -P)"
  echo "Debug: GIT_SUBMODULE_GITDIR=$GIT_SUBMODULE_GITDIR"
- echo "Debug:  canonicalised      =$(readlink -m $PWD/$DEST_PATH/$GIT_PROJECT/$GIT_SUBMODULE_GITDIR)"
+ echo "Debug:  canonicalised      =$(cd $PWD/$DEST_PATH/$GIT_PROJECT/$GIT_SUBMODULE_GITDIR && pwd -P)"
  echo ""
 fi
 
